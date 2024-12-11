@@ -35,15 +35,15 @@ sum(is.na(df)) # 0
 df$V21[df$V21 == 2] <- 0 # change 2 to 0
 
 # convert num to int
-df$V21 <- as.integer(df$V21)
-str(df)
+# df$V21 <- as.integer(df$V21)
+class(df$V21)
 
 # convert cols to factors 
-categoricals <- c('V1', 'V3', 'V4', 'V6', 'V7', 'V9', 'V10', 'V12', 'V14', 'V15', 'V17', 'V19', 'V20', 'V21')
+categoricals <- c('V1', 'V3', 'V4', 'V6', 'V7', 'V9', 'V10', 'V12', 'V14', 'V15', 'V17', 'V19', 'V20')
 
 df[, categoricals] <- lapply(df[, categoricals], as.factor)
 
-is.factor(df$V1)
+is.factor(df$V21)
 contrasts(df$V1) # Check how col V1 was split out into new binary columns
 
 index <- createDataPartition(df$V1, p = 0.8, list = FALSE)
@@ -52,22 +52,38 @@ test_df <- df[-index, ]
 
 str(train_df)
 
-#define predictor and response variables in training set
 train_x = data.matrix(train_df[, -21])
 train_y = train_df[,21]
-train_y
 
-#define predictor and response variables in testing set
 test_x = data.matrix(test_df[, -21])
 test_y = test_df[, 21]
 
-#define final training and testing sets
+# define final training and testing sets
 xgb_train = xgb.DMatrix(data = train_x, label = train_y)
 xgb_test = xgb.DMatrix(data = test_x, label = test_y)
 
-#define watchlist
+dim(xgb_train)
+class(xgb_train)
+
+
+# define watchlist
 watchlist = list(train=xgb_train, test=xgb_test)
 
-#fit XGBoost model and display training and testing data at each round
-model = xgb.train(data = xgb_train, max.depth = 3, watchlist=watchlist, nrounds = 70)
+# fit XGBoost model and display training and testing data at each round
+model = xgb.train(data = xgb_train, watchlist = watchlist, nrounds = 70, objective = "binary:logistic")
+# we get our lowest test rmse @ run 15, so let's use that for the final model
+
+final = xgboost(data = xgb_train, nrounds = 13)
+
+pred <- predict(final, xgb_test)
+pred
+
+# TODO: Don't we need to round the numbers to binary?
+
+mean((train_y - pred)^2) # MSE
+MAE(test_y, pred) # MAE
+RMSE(test_y, pred) # RMSE
+
+
+# TODO Now let's do this again and define a params object like the docs
 
