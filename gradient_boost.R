@@ -8,6 +8,7 @@
 
 library(xgboost)
 library(caret)
+library(pROC)
 
 rm(list = ls())
 
@@ -22,16 +23,9 @@ sum(is.na(df)) # 0
 
 ?xgboost
 
-# Approach: 
-# Convert all binary and categorical variables to factors
-# Convert response to 0, 1 binary
-# Separate into train and test data: 75/ 25
-# Note: Test df should not have a response column (this may or may not be true)
-
-# Because we need a binary value of 1 or 0 for the model, let's do some quick substitutions 
-# to be inline with what the model expects
-# Also note that in this dataset the response variable value of 1 = good, and 2 = bad.
-# Normally it's 0 = bad, and 1 = good. We need to flip these and provide the right values
+# We need binary values of 0 or 1 as the response for the model
+# Note that in this dataset the response variable value of 1 = good, and 2 = bad.
+# Normally it's 0 = bad, and 1 = good. We need to flip these and provide the right values for the model
 df$V21[df$V21 == 2] <- 0 # change 2 to 0
 
 # convert num to int
@@ -42,29 +36,26 @@ class(df$V21)
 categoricals <- c('V1', 'V3', 'V4', 'V6', 'V7', 'V9', 'V10', 'V12', 'V14', 'V15', 'V17', 'V19', 'V20')
 
 df[, categoricals] <- lapply(df[, categoricals], as.factor)
+summary(df)
 
-is.factor(df$V21)
 contrasts(df$V1) # Check how col V1 was split out into new binary columns
 
 index <- createDataPartition(df$V1, p = 0.8, list = FALSE)
 train_df <- df[index, ]
 test_df <- df[-index, ]
 
-str(train_df)
-
-train_x = data.matrix(train_df[, -21])
+train_x = data.matrix(train_df[, -21]) # keep response out of training data
 train_y = train_df[,21]
 
-test_x = data.matrix(test_df[, -21])
+test_x = data.matrix(test_df[, -21]) # keep response out of test data
 test_y = test_df[, 21]
 
-# define final training and testing sets
+# define training and testing sets for xgb.train
 xgb_train = xgb.DMatrix(data = train_x, label = train_y)
 xgb_test = xgb.DMatrix(data = test_x, label = test_y)
 
 dim(xgb_train)
 class(xgb_train)
-
 
 # define watchlist
 watchlist = list(train=xgb_train, test=xgb_test)
@@ -73,17 +64,40 @@ watchlist = list(train=xgb_train, test=xgb_test)
 model = xgb.train(data = xgb_train, watchlist = watchlist, nrounds = 70, objective = "binary:logistic")
 # we get our lowest test rmse @ run 15, so let's use that for the final model
 
-final = xgboost(data = xgb_train, nrounds = 13)
+final = xgboost(data = xgb_train, nrounds = 13, objective = "binary:logistic")
 
 pred <- predict(final, xgb_test)
-pred
+head(pred) # need to convert to binary
 
-# TODO: Don't we need to round the numbers to binary?
+prediction <- as.numeric(pred > 0.5) # if num > 0 convert to 1
+head(prediction)
 
-mean((train_y - pred)^2) # MSE
-MAE(test_y, pred) # MAE
-RMSE(test_y, pred) # RMSE
+# TODO: Consider that the cost of classifying bad credit risks as good (a score of 1) 
+# is higher than classifying good as bad. Write a function to loop thru different 
+# rounding thresholds (.6, .65, .7 , .75 ...) that make it harder to classify bad as good
+# return a table of MSE, MAE, RMSE values for each threshold value
+
+mean((test_y - prediction)^2) # MSE 0.24
+MAE(test_y, prediction) # MAE 0.24
+RMSE(test_y, prediction) # RMSE 0.49
+
+conf_matrix <- confusionMatrix(as.factor(prediction), as.factor(test_y))
+conf_matrix
+#           Reference
+# Prediction   0    1
+#           0  25  14
+#           1  34 124
+
+# Accuracy : 0.7563
+
+roc_curve <- roc(test_y, prediction)
+auc(roc_curve)
+plot(roc_curve)
+
+# Area under the curve: 0.6611
+# This means our model has a 66% chance of correctly classifying positive and negative credit risks
+# This suggests potential room for improvement in the model
 
 
 # TODO Now let's do this again and define a params object like the docs
-
+# use cross validation and verbose
