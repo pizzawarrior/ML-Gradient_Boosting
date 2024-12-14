@@ -25,12 +25,8 @@ sum(is.na(df)) # 0
 
 # We need binary values of 0 or 1 as the response for the model
 # Note that in this dataset the response variable value of 1 = good, and 2 = bad.
-# Normally it's 0 = bad, and 1 = good. We need to flip these and provide the right values for the model
+# Normally it's 1 = good and 0 = bad. We need to flip these and provide the right values for the model
 df$V21[df$V21 == 2] <- 0 # change 2 to 0
-
-# convert num to int
-# df$V21 <- as.integer(df$V21)
-class(df$V21)
 
 # convert cols to factors 
 categoricals <- c('V1', 'V3', 'V4', 'V6', 'V7', 'V9', 'V10', 'V12', 'V14', 'V15', 'V17', 'V19', 'V20')
@@ -65,12 +61,12 @@ model = xgb.train(data = xgb_train,
                   watchlist = watchlist, 
                   nrounds = 20, 
                   objective = "binary:logistic")
-# we get our lowest test rmse @ run 15, so let's use that for the final model
+# we get our lowest test rmse @ run 13, so let's use that for the final model
 
 final = xgboost(data = xgb_train, nrounds = 13, objective = "binary:logistic")
 
 pred <- predict(final, xgb_test)
-head(pred) # need to convert to binary
+head(pred) # need to convert predictions to binary
 
 prediction <- as.numeric(pred > 0.5) # if num > 0 convert to 1
 head(prediction)
@@ -125,7 +121,7 @@ res_df = data.frame(Thr=double(), TNR=double(), TPR=double(), Acc=double()) # AU
 
 # capture TNR, TPR, Accuracy, AUC contribution at each threshold from predicted values
 for (num in thr){
-  pred_round <- as.integer(pred > num) # if predicted values > thr value convert to 1, else 0
+  pred_round = as.integer(pred > num) # if predicted values > thr value convert to 1, else 0
   acc = sum(y == pred_round) / n # accuracy
   tp = sum(y[y == 1] == pred_round[y == 1]) # true pos
   tn = sum(y[y == 0] == pred_round[y == 0]) # true neg
@@ -137,7 +133,7 @@ for (num in thr){
     auc = auc + (last_tpr * (last_tnr - tnr))
   }
   
-  df = data.frame(Thr = i, TNR = tnr, TPR = tpr, Acc = acc)
+  df = data.frame(Thr = num, TNR = tnr, TPR = tpr, Acc = acc)
   res_df = rbind(res_df, df)
   last_tpr = tpr
   last_tnr = tnr
@@ -161,16 +157,16 @@ which.max(res_df$Acc) # find threshold that returns highest accuracy
 
 
 # ******************************************************************************
-# TODO: The cost of misclassifying a BAD customer as a GOOD one is 5x the alternative.
+# The cost of misclassifying a BAD customer as a GOOD one is 5x the alternative.
 # Find the best threshold based on this info 
 # (Find the threshold that returns the lowest false positive rate)
 
 loss <- c()
 
 for(i in 1:100) {
-  y_hat_round <- as.integer(pred > (i / 100)) # calculate threshold predictions by increments of .01
+  y_hat_round = as.integer(pred > (i / 100)) # calculate threshold predictions by increments of .01
   
-  tm <-as.matrix(table(y_hat_round, test_y))
+  tm = as.matrix(table(y_hat_round, test_y))
   
   if (nrow(tm) > 1) { 
     fp = tm[2, 1] 
@@ -184,7 +180,7 @@ for(i in 1:100) {
       fn = 0 
   }
   
-  loss <- c(loss, fp * 5 + fn)
+  loss = c(loss, fp * 5 + fn)
 }
 
 plot(c(1:100) / 100, loss, xlab = "Threshold", ylab = "Loss", main = "Loss vs Threshold")
@@ -193,23 +189,23 @@ which.min(loss)
 # [1] 86
 
 loss
-loss[86] # 102
-loss[57] # 141
+loss[86] # 102 This is the threshold with lowest cost of misclassifying bad customers as good
+loss[57] # 141 This is the threshold for the highest accuracy
 
-#THIS IS WHERE WE LEFT OFF
-#Here's the accuracy and area-under-curve for the 0.13 threshold:
-y_hat_round <- as.integer(y_hat > (which.min(loss) / 100)) # find 0/1 predictions
-t <- table(y_hat_round,d.valid$V21) # put in table form 
-acc <- (t[1,1] + t[2,2]) / sum(t) # calculate accuracy
-r<-roc(d.valid$V21,y_hat_round) # calculate ROC curve
-auc <- r$auc # get AUC
+# Accuracy and area-under-curve for the 0.86 threshold:
+y_hat_round <- as.integer(pred > (which.min(loss) / 100)) # find 0 / 1 predictions
+t <- table(y_hat_round, test_y) # put in table form 
+t
+acc <- (t[1, 1] + t[2, 2]) / sum(t) # calculate accuracy
+r_curve <- roc(test_y, y_hat_round) # calculate ROC curve
+auc <- r_curve$auc # get AUC
 
-acc ## [1] 0.57
-auc ## Area under the curve: 0.66
+acc ## [1] 0.644
+auc ## Area under the curve: 0.71
 
-# Summary: The threshold range from  .81 - .88 are all pretty good
+# Summary: The threshold range from .81 - .88 are all pretty good
 # The expected loss at .86 is 102 over the 197 data points, vs the loss of 141 
-# for a threshold value of .57
+# for a threshold value of .57 (which has the highest accuracy)
 # This supports that understanding the context of the values we are classifying is critical
 
 
