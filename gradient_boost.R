@@ -144,10 +144,11 @@ auc # 0.7710233
 # plot ROC
 plot(res_df$TNR, res_df$TPR, type = 'l', xlim = c(1.002, 0), ylim = c(0, 1.002), 
      yaxs = "i", xaxs = "i", col = 'blue', ylab = 'Sensitivity (TPR)', xlab = 'Specificity (TNR)', main = 'ROC curve')
+
 abline(1, -1, col = 'gray')
+
 legend('center', legend = paste('AUC = ', round(auc * 100, 2)), bty = 'n')
 
-tail(res_df, 100)
 
 which.max(res_df$Acc) # find threshold that returns highest accuracy 
 #     Thr        TNR        TPR        Acc
@@ -188,72 +189,19 @@ plot(c(1:100) / 100, loss, xlab = "Threshold", ylab = "Loss", main = "Loss vs Th
 which.min(loss)
 # [1] 86
 
-loss
 loss[86] # 102 This is the threshold with lowest cost of misclassifying bad customers as good
 loss[57] # 141 This is the threshold for the highest accuracy
 
 # Accuracy and area-under-curve for the 0.86 threshold:
-y_hat_round <- as.integer(pred > (which.min(loss) / 100)) # find 0 / 1 predictions
+y_hat_round <- as.integer(pred > (which.min(loss) / 100)) # convert to binary predictions
 t <- table(y_hat_round, test_y) # put in table form 
-t
-acc <- (t[1, 1] + t[2, 2]) / sum(t) # calculate accuracy
-r_curve <- roc(test_y, y_hat_round) # calculate ROC curve
-auc <- r_curve$auc # get AUC
+acc <- (t[1, 1] + t[2, 2]) / sum(t) # calculate accuracy: 64.4%
+r_curve <- roc(test_y, y_hat_round) 
+auc <- r_curve$auc # Area under the curve: 0.71
 
-acc ## [1] 0.644
-auc ## Area under the curve: 0.71
 
 # Summary: The threshold range from .81 - .88 are all pretty good
 # The expected loss at .86 is 102 over the 197 data points, vs the loss of 141 
 # for a threshold value of .57 (which has the highest accuracy)
 # This supports that understanding the context of the values we are classifying is critical
 
-
-# ******************************************************************************
-
-# Alternative to above, using more tunable features
-# TODO Now let's do this again and define a params object like the docs
-# use cross validation and verbose
-
-rm(list = ls())
-
-options(scipen = 999)
-set.seed(123)
-
-df <- read.table('~/CODING/ml-gradient-boost/germancredit.txt', header = F)
-
-df$V21[df$V21 == 2] <- 0 # change 2 to 0
-
-# convert cols to factors 
-categoricals <- c('V1', 'V3', 'V4', 'V6', 'V7', 'V9', 'V10', 'V12', 'V14', 'V15', 'V17', 'V19', 'V20')
-
-df[, categoricals] <- lapply(df[, categoricals], as.factor)
-
-index <- createDataPartition(df$V1, p = 0.8, list = FALSE)
-train_df <- df[index, ]
-test_df <- df[-index, ]
-
-train_x = data.matrix(train_df[, -21]) # keep response out of training data
-train_y = train_df[,21]
-
-test_x = data.matrix(test_df[, -21]) # keep response out of test data
-test_y = test_df[, 21]
-
-# define training and testing sets for xgb.train
-xgb_train = xgb.DMatrix(data = train_x, label = train_y)
-xgb_test = xgb.DMatrix(data = test_x, label = test_y)
-
-dim(xgb_train)
-class(xgb_train) # "xgb.DMatrix"
-
-# define watchlist
-watchlist = list(train=xgb_train, test=xgb_test)
-
-# fit XGBoost model and display training and testing data at each round
-model = xgb.train(data = xgb_train, 
-                  watchlist = watchlist, 
-                  nrounds = 20, 
-                  objective = "binary:logistic")
-# we get our lowest test rmse @ run 15, so let's use that for the final model
-
-final = xgboost(data = xgb_train, nrounds = 13, objective = "binary:logistic")
