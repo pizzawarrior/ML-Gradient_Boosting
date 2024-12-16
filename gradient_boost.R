@@ -15,7 +15,7 @@ rm(list = ls())
 options(scipen = 999)
 set.seed(123)
 
-df <- read.table('~/CODING/ml-gradient-boost/germancredit.txt', header = F)
+df <- read.table('~/CODING/ml-gradient-boost/data/germancredit.txt', header = F)
 
 summary(df)
 
@@ -28,7 +28,7 @@ sum(is.na(df)) # 0
 # Normally it's 1 = good and 0 = bad. We need to flip these and provide the right values for the model
 df$V21[df$V21 == 2] <- 0 # change 2 to 0
 
-# convert cols to factors 
+# convert cols to factors
 categoricals <- c('V1', 'V3', 'V4', 'V6', 'V7', 'V9', 'V10', 'V12', 'V14', 'V15', 'V17', 'V19', 'V20')
 
 df[, categoricals] <- lapply(df[, categoricals], as.factor)
@@ -57,9 +57,9 @@ class(xgb_train) # "xgb.DMatrix"
 watchlist = list(train=xgb_train, test=xgb_test)
 
 # fit XGBoost model and display training and testing data at each round
-model = xgb.train(data = xgb_train, 
-                  watchlist = watchlist, 
-                  nrounds = 20, 
+model = xgb.train(data = xgb_train,
+                  watchlist = watchlist,
+                  nrounds = 20,
                   objective = "binary:logistic")
 # we get our lowest test rmse @ run 13, so let's use that for the final model
 
@@ -74,7 +74,7 @@ head(prediction)
 mse <- mean((test_y - prediction)^2) # MSE 0.24
 mae <- mean(abs(test_y - prediction)) # .24
 # NOTE the reason why mse = mae is because of the binary classification values.
-# When we square each difference the result is always 0 or 1, which is the same as 
+# When we square each difference the result is always 0 or 1, which is the same as
 # the absolute differences
 
 rmse <- sqrt(mse) # 0.49
@@ -127,12 +127,12 @@ for (num in thr){
   tn = sum(y[y == 0] == pred_round[y == 0]) # true neg
   tpr = tp / pos # sensitivity
   tnr = tn / neg # specificity
-  
+
   # calc AUC contribution
   if (num < 1){
     auc = auc + (last_tpr * (last_tnr - tnr))
   }
-  
+
   df = data.frame(Thr = num, TNR = tnr, TPR = tpr, Acc = acc)
   res_df = rbind(res_df, df)
   last_tpr = tpr
@@ -142,7 +142,7 @@ for (num in thr){
 auc # 0.7710233
 
 # plot ROC
-plot(res_df$TNR, res_df$TPR, type = 'l', xlim = c(1.002, 0), ylim = c(0, 1.002), 
+plot(res_df$TNR, res_df$TPR, type = 'l', xlim = c(1.002, 0), ylim = c(0, 1.002),
      yaxs = "i", xaxs = "i", col = 'blue', ylab = 'Sensitivity (TPR)', xlab = 'Specificity (TNR)', main = 'ROC curve')
 
 abline(1, -1, col = 'gray')
@@ -150,7 +150,7 @@ abline(1, -1, col = 'gray')
 legend('center', legend = paste('AUC = ', round(auc * 100, 2)), bty = 'n')
 
 
-which.max(res_df$Acc) # find threshold that returns highest accuracy 
+which.max(res_df$Acc) # find threshold that returns highest accuracy
 #     Thr        TNR        TPR        Acc
 # 148 0.57248229 0.59322034 0.8840580 0.7969543
 
@@ -159,28 +159,28 @@ which.max(res_df$Acc) # find threshold that returns highest accuracy
 
 # ******************************************************************************
 # The cost of misclassifying a BAD customer as a GOOD one is 5x the alternative.
-# Find the best threshold based on this info 
+# Find the best threshold based on this info
 # (Find the threshold that returns the lowest false positive rate)
 
 loss <- c()
 
 for(i in 1:100) {
   y_hat_round = as.integer(pred > (i / 100)) # calculate threshold predictions by increments of .01
-  
+
   tm = as.matrix(table(y_hat_round, test_y))
-  
-  if (nrow(tm) > 1) { 
-    fp = tm[2, 1] 
-  } else { 
-      fp = 0 
+
+  if (nrow(tm) > 1) {
+    fp = tm[2, 1]
+  } else {
+      fp = 0
   }
-  
-  if (ncol(tm) > 1) { 
-    fn = tm[1, 2] 
-  } else { 
-      fn = 0 
+
+  if (ncol(tm) > 1) {
+    fn = tm[1, 2]
+  } else {
+      fn = 0
   }
-  
+
   loss = c(loss, fp * 5 + fn)
 }
 
@@ -194,14 +194,13 @@ loss[57] # 141 This is the threshold for the highest accuracy
 
 # Accuracy and area-under-curve for the 0.86 threshold:
 y_hat_round <- as.integer(pred > (which.min(loss) / 100)) # convert to binary predictions
-t <- table(y_hat_round, test_y) # put in table form 
+t <- table(y_hat_round, test_y) # put in table form
 acc <- (t[1, 1] + t[2, 2]) / sum(t) # calculate accuracy: 64.4%
-r_curve <- roc(test_y, y_hat_round) 
+r_curve <- roc(test_y, y_hat_round)
 auc <- r_curve$auc # Area under the curve: 0.71
 
 
 # Summary: The threshold range from .81 - .88 are all pretty good
-# The expected loss at .86 is 102 over the 197 data points, vs the loss of 141 
+# The expected loss at .86 is 102 over the 197 data points, vs the loss of 141
 # for a threshold value of .57 (which has the highest accuracy)
 # This supports that understanding the context of the values we are classifying is critical
-
