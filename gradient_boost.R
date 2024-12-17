@@ -117,14 +117,16 @@ last_tpr = 1
 last_tnr = 0
 
 # data frame to store results
-res_df = data.frame(Thr=double(), TNR=double(), TPR=double(), Acc=double()) # AUC=double(), ltnr=double(), ltpr=double())
+res_df = data.frame(Thr=double(), TNR=double(), TPR=double(), Acc=double())
 
 # capture TNR, TPR, Accuracy, AUC contribution at each threshold from predicted values
 for (num in thr){
   pred_round = as.integer(pred > num) # if predicted values > thr value convert to 1, else 0
   acc = sum(y == pred_round) / n # accuracy
+
   tp = sum(y[y == 1] == pred_round[y == 1]) # true pos
   tn = sum(y[y == 0] == pred_round[y == 0]) # true neg
+
   tpr = tp / pos # sensitivity
   tnr = tn / neg # specificity
 
