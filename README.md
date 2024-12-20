@@ -1,7 +1,7 @@
 ## Gradient Boosting with Logistic Regression
 
 ### Intro
-This project is an exploration of applying Gradient Boost logistic regression to a public data set. Analyses have been crafted both in R and Python for comparison. Several plots are included, such as ROC plots, confusion matrices, and calculated losses at a range of thresholds.
+This project is an exploration of applying Gradient Boosting with Logistic Regression to a public data set. Analyses have been crafted both in R and Python for comparison. Several plots are included, such as ROC plots, confusion matrices, and losses calculated at a range of thresholds.
 
 ### Frameworks Used:
 #### Python:
@@ -52,7 +52,11 @@ An initial xgboost model is built using a high number of rounds to test how the 
 
 Predictions are made using the test data set, and evaluation metrics such as RMSE, MSE, and accuracy are calculated. A confusion matrix is built as well to help gauge the results.
 
+<img src="https://github.com/user-attachments/assets/859ad782-2d4e-4c5f-a060-cf2011afb0cb" alt="ROC_curve_highest_acc" width="700">
+
 Using all of the predicted probabilities as range of threshold values for converting the probabilities to 1s or 0s, I then calculated the accuracy, true-negative-rate, and true-positive-rate for each threshold. This allows me to locate the threshold that generates the highest accuracy.
+
+<img src="https://github.com/user-attachments/assets/c6fb3386-a283-4aae-95a1-688c36ef7a2a" alt="Loss_vs_Threshold" width="700">
 
 As a further exercise, I explored the following problem:
 - Consider that the cost of misclassifying a bad customer as good in this case is 5x higher than classifying a good customer as bad. Return the threshold value that minimizes this cost.
