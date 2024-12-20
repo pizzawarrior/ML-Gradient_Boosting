@@ -18,12 +18,14 @@ This project is an exploration of applying Gradient Boost logistic regression to
 
 ### About the Data
 'German Credit Data', found here:
-TODO: add link
+https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data
 
 This data set contains a range of predictors used for determining credit-worthiness of customers, including:
 - status of bank account
 - employment status
-- TODO: add more
+- age
+- owns property
+- etc.
 
 The response is binary, with the following corresponding values:
 - 1 = good
