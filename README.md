@@ -18,24 +18,19 @@ This project is an exploration of applying Gradient Boosting with Logistic Regre
 
 ### About the Data
 'German Credit Data', found here:
-https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data
-
-This data set contains a range of predictors used for determining credit-worthiness of customers, including:
-- status of bank account
-- employment status
-- age
-- owns property
-- etc.
-
-The response is binary, with the following corresponding values:
-- 1 = good
-- 2 = bad
-
+- https://archive.ics.uci.edu/dataset/144/statlog+german+credit+data
 - Number of columns: 21
 - Number of rows: 1000
 - Number of predictors: 20
-- Response column? Yes
+- The response is binary, with the following corresponding values: 1 = good, 2 = bad
 - Missing data? No
+
+The data set contains a range of predictors used for determining credit-worthiness of customers, including:
+- status of bank account
+- employment status
+- age
+- whether the person owns property or not
+- etc.
 
 Data Types:
 - Integers
@@ -52,11 +47,11 @@ An initial xgboost model is built using a high number of rounds to test how the 
 
 Predictions are made using the test data set, and evaluation metrics such as RMSE, MSE, and accuracy are calculated. A confusion matrix is built as well to help gauge the results.
 
-<img src="https://github.com/user-attachments/assets/859ad782-2d4e-4c5f-a060-cf2011afb0cb" alt="ROC_curve_highest_acc" width="700"> /
+<img src="https://github.com/user-attachments/assets/859ad782-2d4e-4c5f-a060-cf2011afb0cb" alt="ROC_curve_highest_acc" width="700">
 
 Using all of the predicted probabilities as range of threshold values for converting the probabilities to 1s or 0s, I then calculated the accuracy, true-negative-rate, and true-positive-rate for each threshold. This allows me to locate the threshold that generates the highest accuracy.
 
-<img src="https://github.com/user-attachments/assets/c6fb3386-a283-4aae-95a1-688c36ef7a2a" alt="Loss_vs_Threshold" width="700"> /
+<img src="https://github.com/user-attachments/assets/c6fb3386-a283-4aae-95a1-688c36ef7a2a" alt="Loss_vs_Threshold" width="700">
 
 As a further exercise, I explored the following problem:
 - Consider that the cost of misclassifying a bad customer as good in this case is 5x higher than classifying a good customer as bad. Return the threshold value that minimizes this cost.
