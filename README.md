@@ -52,7 +52,7 @@ Predictions are made using the test data set, and evaluation metrics such as RMS
 Using all of the predicted probabilities as range of threshold values for converting the probabilities to 1s or 0s, I then calculated the accuracy, true-negative-rate, and true-positive-rate for each threshold. This allows me to locate the threshold that generates the highest accuracy.
 
 <img src="https://github.com/user-attachments/assets/c6fb3386-a283-4aae-95a1-688c36ef7a2a" alt="Loss_vs_Threshold" width="700">\
-In the plot above, we can see that the threshold that produces the highest accuracy is around ~ 8.7.
+In the plot above, we can see that the threshold that produces the highest accuracy is around ~ .86
 
 As a further exercise, I explored the following problem:
 - Consider that the cost of misclassifying a bad customer as good in this case is 5x higher than classifying a good customer as bad. Return the threshold value that minimizes this cost.
