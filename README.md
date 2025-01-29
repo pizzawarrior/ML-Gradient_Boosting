@@ -51,11 +51,12 @@ Predictions are made using the test data set, and evaluation metrics such as RMS
 
 Using all of the predicted probabilities as range of threshold values for converting the probabilities to 1s or 0s, I then calculated the accuracy, true-negative-rate, and true-positive-rate for each threshold. This allows me to locate the threshold that generates the highest accuracy.
 
-<img src="https://github.com/user-attachments/assets/c6fb3386-a283-4aae-95a1-688c36ef7a2a" alt="Loss_vs_Threshold" width="700">
+<img src="https://github.com/user-attachments/assets/c6fb3386-a283-4aae-95a1-688c36ef7a2a" alt="Loss_vs_Threshold" width="700">\
+In the plot above, we can see that the threshold that produces the highest accuracy is around ~ 8.7.
 
 As a further exercise, I explored the following problem:
 - Consider that the cost of misclassifying a bad customer as good in this case is 5x higher than classifying a good customer as bad. Return the threshold value that minimizes this cost.
 - After finding the optimal threshold value, I then calculated the accuracy and AUC value to explore potential tradeoffs of prioritizing the lowest false-positive-rate over accuracy and other metrics.
 
 ### Conclusion
-The highest accuracy (using test data from the same sample) was 79%. This is inline with the supplemental modeling information provided with this data set. It is possible that building a cross-validated xgboost model could improve accuracy, but this is not included in this version.
+The highest accuracy (using test data from the same sample) was 79%. This is inline with the supplemental modeling information provided with this data set. It is possible that building a cross-validated xgboost model could improve accuracy, but this is beyond the scope of this project.
